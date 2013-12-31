@@ -15,12 +15,14 @@ import XMonad
 import XMonad.Config.Desktop
 import XMonad.Util.Run (safeSpawn,spawnPipe)
 import qualified Data.Map as M
+import System.Environment (getEnvironment)
 import XMonad.Util.EZConfig
 import XMonad.Hooks.DynamicLog
 import System.IO
 import XMonad.Hooks.ManageDocks
 import XMonad.Util.EZConfig(additionalKeys)
 import System.Exit
+import XMonad.Actions.WindowGo
 
 customWs = ["1:func","2:java","3:web","4:vms"] ++ map show [5..9]
 
@@ -41,14 +43,23 @@ mateConfig = desktopConfig
 mateKeys (XConfig {modMask = modm}) = M.fromList $
     [((modm .|. shiftMask, xK_l), spawn "mate-screensaver-command -l")
     ,((modm .|. shiftMask, xK_q), io (exitWith ExitSuccess))
-    ,((modm .|. shiftMask, xK_s), spawn "sudo pm-suspend;mate-screensaver-command -l")
-    ,((modm .|. shiftMask, xK_h), spawn "sudo pm-hibernate;mate-screensaver-command -l")
+    ,((modm .|. shiftMask, xK_s), spawn "sudo pm-suspend; mate-screensaver-command -l")
+    ,((modm .|. shiftMask, xK_h), spawn "sudo pm-hibernate; mate-screensaver-command -l")
     -- Mute volume.
   , ((modm .|. controlMask, xK_m), spawn "amixer -q set Master toggle")
   -- Decrease volume.
   , ((modm .|. controlMask, xK_d),  spawn "amixer -q set Master 10%-")
   -- Increase volume.
   , ((modm .|. controlMask, xK_i), spawn "amixer -q set Master 10%+")
+    --disables right mouse button
+  ,((modm .|. shiftMask, xK_m), spawn "xmodmap -e 'pointer = 1 2 0 4 5 6 7 8 9'")
+   --restaures the default configuration of mouse (mainely to enbale the right button)
+  ,((modm .|. shiftMask, xK_e), spawn "xmodmap -e 'pointer = default'")
+  ,((modm .|. shiftMask, xK_n), spawn "xmodmap -e 'keycode 135 = NoSymbol'")
+   -- disable trackpad and enables it (t and y)
+  ,((modm .|. shiftMask, xK_t), spawn "xinput set-prop 'SynPS/2 Synaptics TouchPad' 'Device Enabled' 0")
+  ,((modm .|. shiftMask, xK_y), spawn "xinput set-prop 'SynPS/2 Synaptics TouchPad' 'Device Enabled' 1")
+
     --,((modm, xK_a), sendMessage NextLayout >> (dynamicLogString xmobarPP >>= \d->spawn $"xmessage "++d))
     ]
 
@@ -65,9 +76,11 @@ main = do
                  , manageHook = manageDocks <+> ownManageHook
                 } `additionalKeysP` myKeys
 
-myKeys = [  (("M4-f"), spawn "firefox")
-           ,(("M4-e"), spawn "/home/massyl/softs/scala/eclipse/eclipse")
-           ,(("M4-n"), spawn "emacsclient")
+myKeys = [  (("M4-f"), runOrRaise "firefox" (className =? "Firefox"))
+           ,(("M4-e"), runOrRaise "/home/massyl/softs/scala/eclipse/eclipse" (className =? "Eclipse"))
+           ,(("M4-n"), runOrRaise "emacs" (className =? "Emacs"))
+           --,(("M4-i"), spawn "pidgin")
+           --,(("M4-c"), spawn "google-chrome")
            ,(("M4-z"), kill)
            ,(("M4-p"), spawn "dmenu_run | dmenu -b")
          ]
